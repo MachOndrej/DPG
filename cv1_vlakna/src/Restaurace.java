@@ -21,45 +21,67 @@ class Restaurace {
             this.id = id;
         }
 
+        // Method to return to main code
+        public boolean returnToMainCode() {
+            // You can add any necessary operations here to return to the main code
+            // For demonstration purposes, let's print a message indicating the waiter is returning to the main code
+            System.out.println("Waiter " + id + " returning to main code...");
+            boolean nextMeal = true;
+            return nextMeal;
+        }
+
         public void run() {
             try {
-                if (soupSem.availablePermits() != 0) {
-                    soupSem.acquire(1);     // Reduce soup permit
-                    Object guestId = workQueue.getWork();
-                    String foodType = "SOUP";
-                    foodQueue.addWork(foodType);
-                    System.out.println("Waiter " + id + " getting " + foodType);
-                    sleep(100);
-                    System.out.println("Waiter " + id + " serving " + foodType + " to guest " + guestId);
-                    sleep(100);
-                    sleep(500);     // waiter resting
-                    waiterSem.release(1);
+                for (int i = 0; i < mealsNumber; i++) {
+                    if (soupSem.availablePermits() != 0) {
+                        String foodType = "SOUP";
+                        soupSem.acquire();     // Reduce soup permit
+                        Object guestId = workQueue.getWork();
+                        synchronized (guestId) {
+                            foodQueue.addWork(foodType);
+                            System.out.println("Waiter " + id + " getting " + foodType);
+                            sleep(100);
+                            System.out.println("Waiter " + id + " serving " + foodType + " to guest " + guestId);
+                            sleep(100);
+                            guestId.notify();
+                        }
+                        sleep(500);     // waiter resting
+                        waiterSem.release();
 
-                } else if (mainMealSem.availablePermits() != 0) {
-                    mainMealSem.acquire(1);     // Reduce main meal permit
-                    Object guestId = workQueue.getWork();
-                    String foodType = "MAIN MEAL";
-                    foodQueue.addWork(foodType);
-                    System.out.println("Waiter " + id + " getting " + foodType);
-                    sleep(100);
-                    System.out.println("Waiter " + id + " serving " + foodType + " to guest " + guestId);
-                    sleep(100);
-                    sleep(500);     // waiter resting
-                    waiterSem.release(1);
 
-                } else {
-                    dessertSem.acquire(1);     // Reduce dessert permit
-                    Object guestId = workQueue.getWork();
-                    String foodType = "DESSERT";
-                    foodQueue.addWork(foodType);
-                    System.out.println("Waiter " + id + " getting " + foodType);
-                    sleep(100);
-                    System.out.println("Waiter " + id + " serving " + foodType + " to guest " + guestId);
-                    sleep(100);
-                    sleep(500);     // waiter resting
-                    waiterSem.release(1);
+                    } else if (mainMealSem.availablePermits() != 0) {
+                        String foodType = "MAIN MEAL";
+                        mainMealSem.acquire();     // Reduce main meal permit
+                        Object guestId = workQueue.getWork();
+                        synchronized (guestId) {
+                            foodQueue.addWork(foodType);
+                            System.out.println("Waiter " + id + " getting " + foodType);
+                            sleep(100);
+                            System.out.println("Waiter " + id + " serving " + foodType + " to guest " + guestId);
+                            sleep(100);
+                            guestId.notify();
 
+                        }
+                        sleep(500);     // waiter resting
+                        waiterSem.release();
+
+                    } else {
+                        String foodType = "DESSERT";
+                        dessertSem.acquire(1);     // Reduce dessert permit
+                        Object guestId = workQueue.getWork();
+                        synchronized (guestId) {
+                            foodQueue.addWork(foodType);
+                            System.out.println("Waiter " + id + " getting " + foodType);
+                            sleep(100);
+                            System.out.println("Waiter " + id + " serving " + foodType + " to guest " + guestId);
+                            sleep(100);
+                            guestId.notify();
+                        }
+                        sleep(500);     // waiter resting
+                        waiterSem.release(1);
+                    }
                 }
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -67,7 +89,7 @@ class Restaurace {
     }
 
     static class Guest extends Thread {
-        int id;
+        final Integer id;
 
         Guest(int id) {
             this.id = id;
@@ -77,10 +99,13 @@ class Restaurace {
             try {
                 for (int i = 0; i < mealsNumber; i++) {
                     waiterSem.acquire();
-                    workQueue.addWork(id);
+                    synchronized (id) {
+                        workQueue.addWork(id);
+                        id.wait();
+                    }
                     Object currentFood = foodQueue.getWork();
                     System.out.println("Guest " + id + " is consuming " + currentFood);
-                    sleep(1000);
+                    Thread.sleep(1000);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -113,5 +138,7 @@ class Restaurace {
         for (int i = 0; i < guestNumber; i++) {
             new Restaurace.Guest(i + 1).start(); // start hosts
         }
+
+
     }
 }
