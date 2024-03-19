@@ -2,6 +2,8 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.HashSet;
 
+import static java.lang.Math.abs;
+
 public class Main {
     static int sampleSize = 1000;
     static int minValue = 1;
@@ -56,7 +58,7 @@ public class Main {
         //System.out.println("Sorted array (QuickSort - Multithread): " + Arrays.toString(quicksortedmultithread));
         long endTime2 = System.nanoTime();
         System.out.println("Time spent QuickSort M.: " + (endTime2 - startTime2) + " nanoseconds");
-        System.out.println("Difference = Single - Multi = " + ((endTime1 - startTime1)-(endTime2 - startTime2)));
+        System.out.println("-> Difference = |Single - Multi| = " + abs((endTime1 - startTime1)-(endTime2 - startTime2)));
 
         long startTime3 = System.nanoTime();
         int[] mergedsorted = MergeSort.mergeSort(sampleArray);
@@ -66,11 +68,11 @@ public class Main {
 
         long startTime4 = System.nanoTime();
         int[] mergesortedmultithread = MergeSortMultithread.mergeSort(sampleArray);
-        System.out.println("Sorted array (MergeSort - Multihthread): " + Arrays.toString(mergesortedmultithread));
+        //System.out.println("Sorted array (MergeSort - Multihthread): " + Arrays.toString(mergesortedmultithread));
         long endTime4 = System.nanoTime();
         System.out.println("Time spent MergeSort M.: " + (endTime4 - startTime4) + " nanoseconds");
-        System.out.println("Difference = Single - Multi = " + ((endTime3 - startTime3)-(endTime4 - startTime4)));
-        
+        System.out.println("-> Difference = |Single - Multi| = " + abs((endTime3 - startTime3)-(endTime4 - startTime4)));
+
     }
 
 }
